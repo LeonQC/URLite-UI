@@ -10,12 +10,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { toast } from "sonner";
+import axios from "axios";
 
 export default function CreateLink() {
   const [destination, setDestination] = useState("");
-  const [domain, setDomain] = useState("bit.ly");
+  const [domain, setDomain] = useState("http://localhost:8080");
   const [backHalf, setBackHalf] = useState("");
   const [title, setTitle] = useState("");
+
+  const handlePaste = async (event: React.ClipboardEvent<HTMLInputElement>) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    setDestination(pastedText);
+    try {
+      const response = await axios.get('/api/title', { params: { url: pastedText } });
+      // console.log('Response from backend:', response.data);
+      if (response.data) {
+        setTitle(response.data);
+      }
+    } catch (error) {
+      console.error('Error sending request:', error);
+    }
+  };
+
+  const handleSaveLink = async () => {
+    if (!destination) {
+      toast.error('Destination URL is required');
+      return;
+    }
+    try {
+      const requestBody: Record<string, string> = {
+        target_url: destination,
+        title
+      };
+      if (backHalf) {
+        requestBody.alias = backHalf;
+      }
+      const response = await axios.post('/api/shorten', requestBody);
+      console.log('Link created:', response.data);
+      if (response.data && response.status === 201) {
+        toast.success('created successfully');
+      }
+    } catch (error) {
+      console.error('Error creating link:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create link';
+      toast.error(errorMessage);
+    }
+  };
 
   return (
     <div className="p-4 lg:p-8">
@@ -58,6 +100,7 @@ export default function CreateLink() {
             <Input
               value={destination}
               onChange={(event) => setDestination(event.target.value)}
+              onPaste={handlePaste}
               placeholder="https://example.com/my-long-url"
               className="w-full"
             />
@@ -74,21 +117,19 @@ export default function CreateLink() {
                     <SelectValue placeholder="Select a domain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="bit.ly">bit.ly</SelectItem>
-                    <SelectItem value="urlite.io">urlite.io</SelectItem>
-                    <SelectItem value="go.link">go.link</SelectItem>
+                    <SelectItem value="http://localhost:8080">http://localhost:8080</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 block">
-                  Back-half (optional)
+                  Alias (optional)
                 </label>
                 <Input
                   value={backHalf}
                   onChange={(event) => setBackHalf(event.target.value)}
-                  placeholder="custom-slug"
+                  placeholder="custom-alias"
                 />
               </div>
             </div>
@@ -123,7 +164,7 @@ export default function CreateLink() {
               Add a title and custom path to make your link easier to share.
             </p>
           </div>
-          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+          <Button className="bg-indigo-600 hover:bg-indigo-700 text-white" onClick={handleSaveLink}>
             Save link
           </Button>
         </div>
