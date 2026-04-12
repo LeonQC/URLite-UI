@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Search, Filter, Copy, Share2, Edit2, MoreVertical, Trash2, Calendar } from "lucide-react";
+import axios from "axios";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
+import { Label } from "../components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,40 +14,38 @@ import {
 } from "../components/ui/dropdown-menu";
 
 interface LinkItem {
-  id: string;
+  id: number;
   title: string;
-  url: string;
+  shortUrl: string;
+  originalUrl: string;
   shortCode: string;
-  visits: number;
-  date: string;
-  icon: string;
-  iconBg: string;
+  clicks: number;
+  createdAt: string;
+  // icon: string;
+  // iconBg: string;
 }
 
 export default function ShortLinks() {
   const navigate = useNavigate();
-  const [links] = useState<LinkItem[]>([
-    {
-      id: "1",
-      title: "YouTube",
-      url: "https://www.youtube.com",
-      shortCode: "sU7JWb6D8",
-      visits: 976300,
-      date: "Sep 10, 2020",
-      icon: "📺",
-      iconBg: "bg-red-100",
-    },
-    {
-      id: "2",
-      title: "news.google.com - untitled",
-      url: "https://news.google.com",
-      shortCode: "sFv2s7S20",
-      visits: 350245,
-      date: "Sep 10, 2020",
-      icon: "🌐",
-      iconBg: "bg-blue-100",
-    },
-  ]);
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUrls = async () => {
+      try {
+        const response = await axios.get('/api/urls');
+        // console.log('Fetched URLs:', response.data);
+        setLinks(response.data || []);
+      } catch (error) {
+        console.error('Error fetching URLs:', error);
+        setLinks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUrls();
+  }, []);
 
   return (
     <div className="p-4 lg:p-8">
@@ -95,35 +95,64 @@ export default function ShortLinks() {
 
       {/* Links List */}
       <div className="space-y-4">
-        {links.map((link) => (
+        {loading ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600">Loading links...</p>
+          </div>
+        ) : links.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-600">No links found</p>
+          </div>
+        ) : (
+          links.map((link) => (
           <Card key={link.id} className="p-4 lg:p-6">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Icon */}
-              <div className={`w-12 h-12 ${link.iconBg} rounded-lg flex items-center justify-center text-2xl flex-shrink-0`}>
+              {/* <div className={`w-12 h-12 ${link.iconBg} rounded-lg flex items-center justify-center text-2xl flex-shrink-0`}>
                 {link.icon}
-              </div>
+              </div> */}
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 mb-1 truncate">
+                <h3 className="font-semibold text-gray-800 mb-4 truncate">
                   {link.title}
                 </h3>
-                <a
-                  href={link.url}
-                  className="text-sm text-indigo-600 hover:underline truncate block mb-2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {link.url}
-                </a>
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-600 flex-shrink-0">
+                      Short Link:
+                    </Label>
+                    <a
+                      href={link.shortUrl}
+                      className="text-sm text-indigo-600 hover:underline truncate"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.shortUrl}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs font-semibold text-gray-600 flex-shrink-0">
+                      Original Link:
+                    </Label>
+                    <a
+                      href={link.originalUrl}
+                      className="text-sm text-indigo-600 hover:underline truncate"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {link.originalUrl}
+                    </a>
+                  </div>
+                </div>
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">{link.visits.toLocaleString()}</span>
-                    <span>Visits</span>
+                    <span className="font-medium">{link.clicks}</span>
+                    <span>Clicks</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    <span>{link.date}</span>
+                    <span>{link.createdAt}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span>No Tags</span>
@@ -185,7 +214,8 @@ export default function ShortLinks() {
               </div>
             </div>
           </Card>
-        ))}
+          ))
+        )}
       </div>
     </div>
   );

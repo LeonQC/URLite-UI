@@ -2,3 +2,13 @@ node_modules
 doc
 guidelines
 ATTRIBUTIONS.md
+.DS_Store
+.vscode
+dist
+build
+*.log
+*.env
+*.local
+*.cache
+*.tmp
+.gitignore
