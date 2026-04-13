@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import GettingStarted from "./pages/GettingStarted";
 import ShortLinks from "./pages/ShortLinks";
+import LinkDetail from "./pages/LinkDetail";
 import CreateLink from "./pages/CreateLink";
 import QRCodes from "./pages/QRCodes";
 import Barcodes from "./pages/Barcodes";
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, Component: GettingStarted },
       { path: "links", Component: ShortLinks },
+      { path: "links/:id", Component: LinkDetail },
       { path: "links/create", Component: CreateLink },
       { path: "qr-codes", Component: QRCodes },
       { path: "barcodes", Component: Barcodes },

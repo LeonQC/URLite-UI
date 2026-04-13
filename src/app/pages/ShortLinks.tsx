@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Search, Filter, Copy, Share2, Edit2, MoreVertical, Trash2, Calendar } from "lucide-react";
+import { Search, Filter, Copy, Share2, Edit2, MoreVertical, Trash2, Calendar, Link as LinkIcon } from "lucide-react";
 import axios from "axios";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
@@ -29,6 +29,10 @@ export default function ShortLinks() {
   const navigate = useNavigate();
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleViewLink = (id: number) => {
+    navigate(`/app/links/${id}`);
+  };
 
   useEffect(() => {
     const fetchUrls = async () => {
@@ -114,7 +118,7 @@ export default function ShortLinks() {
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-800 mb-4 truncate">
+                <h3 className="font-semibold text-gray-800 mb-4 truncate cursor-pointer hover:text-indigo-600" onClick={() => handleViewLink(link.id)}>
                   {link.title}
                 </h3>
                 <div className="space-y-3 mb-4">
@@ -181,6 +185,14 @@ export default function ShortLinks() {
                   size="icon"
                   className="hover:bg-indigo-50"
                 >
+                  <LinkIcon className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="hover:bg-indigo-50"
+                  onClick={() => handleViewLink(link.id)}
+                >
                   <Edit2 className="w-4 h-4" />
                 </Button>
                 <DropdownMenu>
@@ -204,13 +216,6 @@ export default function ShortLinks() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-gray-100"
-                >
-                  <span className="text-xl">...</span>
-                </Button>
               </div>
             </div>
           </Card>

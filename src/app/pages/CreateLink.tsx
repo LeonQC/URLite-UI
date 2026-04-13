@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { UploadCloud, Sparkles, ChevronUp } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 import axios from "axios";
 
 export default function CreateLink() {
+  const navigate = useNavigate();
   const [destination, setDestination] = useState("");
   const [domain, setDomain] = useState("http://localhost:8080");
   const [backHalf, setBackHalf] = useState("");
@@ -48,9 +50,10 @@ export default function CreateLink() {
         requestBody.alias = backHalf;
       }
       const response = await axios.post('/api/shorten', requestBody);
-      console.log('Link created:', response.data);
+      // console.log('Link created:', response.data);
       if (response.data && response.status === 201) {
         toast.success('created successfully');
+        navigate(`/app/links/${response.data.id}`);
       }
     } catch (error) {
       console.error('Error creating link:', error);
