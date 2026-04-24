@@ -73,6 +73,7 @@ export default function CreateLink() {
         <Button
           variant="ghost"
           className="text-indigo-600 hover:bg-indigo-50 gap-2"
+          onClick={() => navigate("/app/links/bulk-upload")}
         >
           <UploadCloud className="w-4 h-4" />
           Bulk upload

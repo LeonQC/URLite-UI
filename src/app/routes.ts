@@ -6,6 +6,7 @@ import GettingStarted from "./pages/GettingStarted";
 import ShortLinks from "./pages/ShortLinks";
 import LinkDetail from "./pages/LinkDetail";
 import CreateLink from "./pages/CreateLink";
+import BulkUpload from "./pages/BulkUpload";
 import QRCodes from "./pages/QRCodes";
 import Barcodes from "./pages/Barcodes";
 import Analytics from "./pages/Analytics";
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: "links", Component: ShortLinks },
       { path: "links/:id", Component: LinkDetail },
       { path: "links/create", Component: CreateLink },
+      { path: "links/bulk-upload", Component: BulkUpload },
       { path: "qr-codes", Component: QRCodes },
       { path: "barcodes", Component: Barcodes },
       { path: "analytics", Component: Analytics },
