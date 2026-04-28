@@ -1,36 +1,34 @@
-import { useState, useRef, useEffect, use } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { UploadCloud, ArrowLeft, FileText, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { toast } from "sonner";
-import axios from "axios";
-
-interface UploadResult {
-  index: number;
-  longUrl: string;
-  shortUrl: string;
-}
+import { useBulkUploadWebSocket } from "../hooks/useBulkUploadWebSocket";
 
 export default function BulkUpload() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const wsRef = useRef<WebSocket | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [isCreated, setIsCreated] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [results, setResults] = useState<UploadResult[]>([]);
+
+  // Use the persistent WebSocket hook - stays alive when page unmounts
+  const {
+    progress,
+    results,
+    isUploading,
+    isCreated,
+    uploadFile,
+    clearResults,
+  } = useBulkUploadWebSocket();
 
   useEffect(() => {
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
+    // Show toast when upload completes
+    if (isCreated && results.length > 0) {
+      toast.success("Links created successfully");
+    }
+  }, [isCreated, results.length]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -43,9 +41,7 @@ export default function BulkUpload() {
 
     setFile(selectedFile);
     setFileName(selectedFile.name);
-    setIsCreated(false);
-    setResults([]);
-    setProgress({ current: 0, total: 0 });
+    clearResults();
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -75,67 +71,8 @@ export default function BulkUpload() {
       return;
     }
 
-    setIsUploading(true);
-    setProgress({ current: 0, total: 0 });
-    setResults([]);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await axios.post("/api/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      const batchId = response.data;
-
-      // Connect to WebSocket
-      const ws = new WebSocket(`ws://localhost:8080/w/s?batchId=${batchId}`);
-      wsRef.current = ws;
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('====data====>: ', data);
-
-        // done message with index -1 indicates completion
-        if (data.index === -1) {
-          setIsUploading(false);
-          setIsCreated(true);
-          toast.success("Links created successfully");
-          ws.close();
-          return;
-        }
-
-        // Each message is a result with { shortUrl, index, longUrl }
-        setResults((prev) => [...prev, {
-          index: data.index,
-          longUrl: data.longUrl || "",
-          shortUrl: data.shortUrl || "",
-        }]);
-
-        // Increment progress for each result received
-        setProgress((prev) => ({
-          current: prev.current + 1,
-          total: results.length - 1
-        }));
-      };
-
-      // ws.onclose = () => {
-      //   setIsUploading(false);
-      //   setIsCreated(true);
-      //   toast.success("Links created successfully");
-      // };
-
-      // ws.onerror = (error) => {
-      //   console.error("WebSocket error:", error);
-      //   setIsUploading(false);
-      //   toast.error("Connection error");
-      // };
-
-    } catch (error) {
-      setIsUploading(false);
+    const batchId = await uploadFile(file);
+    if (!batchId) {
       toast.error("Failed to upload file");
     }
   };
@@ -143,9 +80,7 @@ export default function BulkUpload() {
   const handleClear = () => {
     setFile(null);
     setFileName("");
-    setIsCreated(false);
-    setResults([]);
-    setProgress({ current: 0, total: 0 });
+    clearResults();
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
